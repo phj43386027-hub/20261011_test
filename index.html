@@ -1,0 +1,191 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>청소당번 랜덤 뽑기</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 30px 16px;
+    background: #eff6ff;
+    font-family: "Malgun Gothic", sans-serif;
+    text-align: center;
+    color: #1e293b;
+  }
+  .container {
+    max-width: 780px;
+    margin: auto;
+    padding: 28px;
+    background: white;
+    border-radius: 24px;
+    box-shadow: 0 8px 30px #1e40af18;
+  }
+  h1 { font-size: 32px; margin-bottom: 8px; }
+  .subtitle { color: #64748b; }
+  .result {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    min-height: 115px;
+    margin: 25px 0;
+  }
+  .winner {
+    display: grid;
+    place-items: center;
+    width: 85px;
+    height: 85px;
+    border-radius: 18px;
+    background: #2563eb;
+    color: white;
+    font-size: 32px;
+    font-weight: bold;
+    animation: pop .3s ease;
+  }
+  @keyframes pop {
+    from { transform: scale(.5); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  button {
+    padding: 14px 26px;
+    margin: 5px;
+    border: none;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  button:disabled { opacity: .5; cursor: wait; }
+  .draw { background: #2563eb; color: white; }
+  .reset { background: #e2e8f0; color: #334155; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 7px;
+    margin-top: 20px;
+  }
+  .student {
+    padding: 13px 0;
+    background: #f1f5f9;
+    border-radius: 9px;
+    font-weight: bold;
+  }
+  .selected { background: #2563eb; color: white; }
+  #status { min-height: 24px; color: #2563eb; }
+  @media(max-width: 500px) {
+    .grid { grid-template-columns: repeat(5, 1fr); }
+    h1 { font-size: 25px; }
+    .winner { width: 58px; height: 58px; font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🧹 오늘의 청소당번은?</h1>
+  <p class="subtitle">1번부터 30번 중 랜덤으로 5명을 선정합니다!</p>
+
+  <div class="result" id="result">
+    <p>🎁 오늘의 행운의 번호는?</p>
+  </div>
+  <p id="status" aria-live="polite">뽑기 버튼을 눌러주세요.</p>
+
+  <button class="draw" id="drawBtn" onclick="drawStudents()">
+    🎲 5명 뽑기
+  </button>
+  <button class="reset" onclick="resetDraw()">↻ 초기화</button>
+
+  <h3>우리 반 학생 번호</h3>
+  <div class="grid" id="studentGrid"></div>
+</div>
+
+<script>
+const TOTAL = 30;
+const PICK = 5;
+let timer = null;
+
+function randomStudents() {
+  const numbers = Array.from(
+    {length: TOTAL}, (_, i) => i + 1
+  );
+
+  // Fisher-Yates 무작위 섞기
+  for (let i = numbers.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
+  }
+
+  return numbers.slice(0, PICK).sort((a, b) => a - b);
+}
+
+function showStudents(selected = []) {
+  const grid = document.getElementById("studentGrid");
+  grid.innerHTML = "";
+
+  for (let i = 1; i <= TOTAL; i++) {
+    const div = document.createElement("div");
+    div.className = "student";
+    if (selected.includes(i)) div.classList.add("selected");
+    div.textContent = i;
+    grid.appendChild(div);
+  }
+
+  const result = document.getElementById("result");
+  result.innerHTML = "";
+
+  if (selected.length === 0) {
+    result.textContent = "🎁 오늘의 행운의 번호는?";
+  } else {
+    selected.forEach(n => {
+      const div = document.createElement("div");
+      div.className = "winner";
+      div.textContent = n;
+      result.appendChild(div);
+    });
+  }
+}
+
+function drawStudents() {
+  if (timer !== null) return;
+
+  const btn = document.getElementById("drawBtn");
+  const status = document.getElementById("status");
+  btn.disabled = true;
+  status.textContent = "두근두근! 청소당번을 뽑고 있어요…";
+
+  let count = 0;
+  timer = setInterval(() => {
+    showStudents(randomStudents());
+    count++;
+
+    if (count >= 15) {
+      clearInterval(timer);
+      timer = null;
+      showStudents(randomStudents());
+      status.textContent = "🎉 청소당번 5명이 선정되었습니다!";
+      btn.disabled = false;
+      btn.textContent = "🎲 다시 뽑기";
+    }
+  }, 90);
+}
+
+function resetDraw() {
+  if (timer !== null) {
+    clearInterval(timer);
+    timer = null;
+  }
+  showStudents();
+  document.getElementById("status").textContent =
+    "뽑기 버튼을 눌러주세요.";
+  const btn = document.getElementById("drawBtn");
+  btn.disabled = false;
+  btn.textContent = "🎲 5명 뽑기";
+}
+
+showStudents();
+</script>
+</body>
+</html>
